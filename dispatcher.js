@@ -27,7 +27,6 @@ var obj = {
     index: function (options, locals, api, callback) {
 
         callback(null, {
-            helpers: locals.helpers,
             view: 'index',
             located: false
         });
@@ -62,9 +61,6 @@ var obj = {
             api.expose(photosData, 'mojito.data.photos');
 
             callback(null, {
-                helpers: locals.helpers,
-                routes: locals.routes,
-
                 view: 'grid',
                 located: true,
                 place: {
@@ -101,9 +97,6 @@ var obj = {
             api.expose(photoData, 'mojito.data.photo');
 
             callback(null, {
-                helpers: locals.helpers,
-                routes: locals.routes,
-
                 view: 'lightbox',
                 located: true,
                 place: {
@@ -117,21 +110,6 @@ var obj = {
                 }
             });
 
-        });
-
-    },
-
-    lookup: function (options, locals, api, callback) {
-
-        var place     = new Y.PNM.Place(),
-            placeText = locals.url.split('/')[1];
-
-        place.load({text: placeText}, function () {
-            if (place.isNew()) {
-                return api.notFound();
-            }
-
-            api.redirect(locals.helpers.pathTo('places', {id: place.get('id')}), 302);
         });
 
     }
@@ -151,6 +129,9 @@ module.exports = function () {
                     FLICKR: config.flickr
                 }, 'YUI.Env.PNM');
 
+                // TODO: locator should be used here to:
+                // assuming name to be something like "foo" or "foo.action" like mojito.
+                // locator.get(name[0]).invoke((name[1] || 'index'), options, locals, api, callback);
                 obj[name](options, locals, api, callback);
 
             } else {
