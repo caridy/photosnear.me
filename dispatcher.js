@@ -30,7 +30,7 @@ module.exports = {
         templatePattern = config.dirs.templates + '{view}.handlebars';
         return this;
     },
-    dispatch: function (name, options, locals, callback) {
+    dispatch: function (name, options, locals, api, callback) {
         if (name === 'index') {
 
             callback(null, {
@@ -69,6 +69,19 @@ module.exports = {
                     pageURL: locals.data.photo.get('pageURL')
                 },
                 routes: locals.routes
+            });
+
+        } else if (name === 'lookup') {
+
+            var place     = req.Y.use('pnm-place').PNM.Place(),
+                placeText = locals.url.split('/')[1];
+
+            place.load({text: placeText}, function () {
+                if (place.isNew()) {
+                    return api.notFound();
+                }
+
+                res.redirect(locals.helpers.pathTo('places', {id: place.get('id')}), 302);
             });
 
         } else {

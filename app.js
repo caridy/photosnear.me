@@ -7,6 +7,7 @@ var express    = require('express'),
     handlebars = require('express3-handlebars'),
 
     locator    = require('./locator.js'),
+    dispatcher = require('./dispatcher.js'),
     config     = require('./conf/config'),
     middleware = require('./lib/middleware'),
     routes     = require('./lib/routes'),
@@ -18,7 +19,7 @@ var express    = require('express'),
 mojito.plug(require('mojito-yui'));
 mojito.yui({
     "allowRollup" : false
-});
+}, __dirname + '/node_modules/yui');
 
 // -- Legacy Stuff in PNM -------------------------------------------------------
 
@@ -83,9 +84,14 @@ app.use(mojito.yui.serveAppFromLocal({
 }));
 app.use(middleware.placeLookup('/places/'));
 
+// Error handlers
+app.configure('production', function () {
+    app.use(mojito.internalServerError);
+});
+
 // -- Registers custom dispatcher -----------------------------------------------
 
-mojito.dispatcher('pnm', require('./dispatcher.js'));
+mojito.dispatcher('pnm', dispatcher);
 
 // -- Routes -------------------------------------------------------------------
 
