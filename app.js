@@ -1,112 +1,105 @@
-var express = require('express'),
-    expose  = require('express-expose'),
-    yui     = require('yui'),
+/*jslint node:true*/
 
-    PNM_ENV = yui.YUI.namespace('Env.PNM'),
+'use strict';
 
-    config = require('./conf/config'),
-    app, hbs, middleware, routes, exposedRoutes;
+var express    = require('express'),
+    mojito     = require('mojito-server'),
+    handlebars = require('express3-handlebars'),
 
-// -- Configure YUI ------------------------------------------------------------
+    locator    = require('./locator.js'),
+    config     = require('./conf/config'),
+    middleware = require('./lib/middleware'),
+    routes     = require('./lib/routes'),
 
-// Applies config to shared YUI instance.
-yui.getInstance().applyConfig(config.yui.server);
+    app = mojito();
 
+// -- Configure mojito.yui plugin ----------------------------------------------
+
+mojito.plug(require('mojito-yui'));
+mojito.yui({
+    "allowRollup" : false
+});
+
+// -- Legacy Stuff in PNM -------------------------------------------------------
+
+// for whatever reason, PNM is using `YUI.Env.PNM`
+// so we need to hack into it.
+var YUI = mojito.yui.get();
+var PNM_ENV = YUI.namespace('Env.PNM');
 PNM_ENV.CACHE  = config.cache.server;
 PNM_ENV.FLICKR = config.flickr;
+app.expose(config.cache.client, 'YUI.Env.PNM.CACHE', 'pnm_env');
+app.expose(config.flickr, 'YUI.Env.PNM.FLICKR', 'pnm_env');
 
-// -- Configure App ------------------------------------------------------------
+// exposing `req.Y` on every request
+var Y = YUI({
+    useSync: true,
+    modules: locator.getYUIAppGroupModules()
+});
 
-app = express();
-hbs = require('./lib/hbs');
+app.use(function (req, res, next) {
+    req.Y = Y;
+    next();
+});
+
+// -- App Level configurations -------------------------------------------------
+
+Y.use('handlebars'); // use the same engine on server and client
+app.engine('handlebars', handlebars({
+    defaultLayout: config.layouts.main,
+    handlebars   : Y.Handlebars,
+    partialsDir  : config.dirs.templates
+}));
+app.set('view engine', 'handlebars');
+app.set('views', config.dirs.views);
 
 app.set('name', config.name);
 app.set('env', config.env);
 app.set('port', config.port);
 
-app.engine(hbs.extname, hbs.engine);
-app.set('view engine', hbs.extname);
-app.set('views', config.dirs.views);
-
 app.enable('strict routing');
-
-app.expose(config.cache.client, 'YUI.Env.PNM.CACHE', 'pnm_env');
-app.expose(config.flickr, 'YUI.Env.PNM.FLICKR', 'pnm_env');
-
-app.locals({
-    min        : config.env === 'production' ? '-min' : '',
-    typekit    : config.typekit,
-    yui_config : JSON.stringify(config.yui.client),
-    yui_version: config.yui.version
-});
 
 // -- Middleware ---------------------------------------------------------------
 
-middleware = require('./lib/middleware');
-
-if (app.get('env') === 'development') {
-    app.use(express.logger('tiny'));
-}
-
-app.use(express.compress());
 app.use(express.favicon());
 app.use(app.router);
-app.use(express.static(config.dirs.pub));
-app.use(express.static(config.dirs.shared));
+app.use(express['static'](config.dirs.pub));
+app.configure('development', function () {
+    app.use(mojito.yui.serveCoreFromLocal({
+        combine: false,
+        debug: true,
+        filter: "debug",
+        throwFail: true,
+        requireRegistration: true
+    }));
+});
+app.configure('production', function () {
+    app.use(mojito.yui.serveCoreFromCDN({
+        maxURLLength: 2048
+    }));
+});
+app.use(mojito.yui.serveAppFromLocal({
+    modules: locator.getYUIAppGroupModules()
+}));
 app.use(middleware.placeLookup('/places/'));
 
-if (app.get('env') === 'development') {
-    app.use(express.errorHandler({
-        dumpExceptions: true,
-        showStack     : true
-    }));
-} else {
-    app.use(express.errorHandler());
-}
+// -- Registers custom dispatcher -----------------------------------------------
+
+mojito.dispatcher('pnm', require('./dispatcher.js'));
 
 // -- Routes -------------------------------------------------------------------
 
-routes        = require('./lib/routes');
-exposedRoutes = {};
+app.get('/', mojito.dispatch('index'));
 
-function exposeRoute(name) {
-    var args = [].slice.call(arguments, 1),
-        routes, route;
-
-    app.get.apply(app, args);
-
-    routes = app.routes.get;
-    route  = routes[routes.length -1];
-
-    exposedRoutes[name] = {
-        path : route.path,
-        keys : route.keys,
-        regex: route.regexp.toString()
-    };
-}
-
-exposeRoute('index', '/', routes.index);
-
-exposeRoute('places', '/places/:id/', [
+app.get('/places/:id/',
     routes.places.load,
-    middleware.exposeData('place', 'photos'),
-    middleware.exposeView('grid'),
-    routes.places.render
-]);
+    mojito.data('place', 'photos'),
+    mojito.dispatch('places'));
 
-exposeRoute('photos', '/photos/:id/', [
+app.get('/photos/:id/',
     routes.photos.load,
-    middleware.exposeData('place', 'photo'),
-    middleware.exposeView('lightbox'),
-    routes.photos.render
-]);
-
-app.get('/combo',        routes.combo.pub);
-app.get('/shared/combo', routes.combo.shared);
-app.get('/templates.js', routes.templates);
-
-PNM_ENV.ROUTES = exposedRoutes;
-app.expose(exposedRoutes, 'YUI.Env.PNM.ROUTES', 'pnm_env');
+    mojito.data('place', 'photo'),
+    mojito.dispatch('photos'));
 
 // -- Exports ------------------------------------------------------------------
 

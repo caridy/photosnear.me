@@ -210,7 +210,6 @@ Y.namespace('PNM').App = PhotosNearMe;
         "pnm-no-location-view",
         'pnm-photos',
         'pnm-place',
-        'pnm-helpers',
         'pnm-templates'
     ]
 });

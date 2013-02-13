@@ -29,31 +29,37 @@
         </div>
     </div>
 
-    <script src="http://yui.yahooapis.com/{{yui_version}}/build/yui/yui{{min}}.js"></script>
+    {{#yui_seed}}
+    <script src="{{{src}}}"></script>
+    {{/yui_seed}}
+
     <script>
         YUI.applyConfig({{{yui_config}}});
 
         {{{pnm_env}}}
+        {{{mojito}}}
     </script>
 
     <script>
     YUI().use('pnm-app', 'json-parse', 'ios-oc-fix', function (Y) {
 
-        var PNMEnv = YUI.namespace('Env.PNM'),
-            data   = YUI.namespace('Env.PNM.DATA'),
-            routes = PNMEnv.ROUTES,
-            view   = PNMEnv.VIEW,
+        var mojito = Y.config.win.mojito || {},
+            data   = mojito.data,
+            routes = mojito.routes.get,
+            view   = mojito.view,
             app, place, photos, photo;
 
         // Re-hydrate models.
-        place  = new Y.PNM.Place(data.place ? Y.JSON.parse(data.place) : {});
-        photos = new Y.PNM.Photos({items: data.photos ? Y.JSON.parse(data.photos) : []});
-        photo  = new Y.PNM.Photo(data.photo ? Y.JSON.parse(data.photo) : {});
+        place  = new Y.PNM.Place(data.place || {});
+        photos = new Y.PNM.Photos({items: data.photos || []});
+        photo  = new Y.PNM.Photo(data.photo || {});
 
         // Register template helpers.
-        Y.Object.each(Y.PNM.Helpers, function (helper, name) {
+        Y.Object.each(mojito.helpers, function (helper, name) {
             Y.Handlebars.registerHelper(name, helper);
         });
+        // exposing helpers to the app level
+        Y.PNM.Helpers = mojito.helpers;
 
         // Create app.
         app = new Y.PNM.App({
