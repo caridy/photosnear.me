@@ -3,19 +3,181 @@ var engine,
 
     config     = require('./conf/config'),
     locator    = require('./locator.js'),
-    yui        = require('yui');
+    YUI        = require('yui').YUI;
 
-var Y = yui.YUI({
+var Y = YUI({
     useSync: true,
     modules: locator.getYUIAppGroupModules()
 });
 
-function showView(view, data, callback) {
-    engine.render(templatePattern.replace('{view}', view), data, callback);
-}
 
-module.exports = {
-    init: function (config) {
+// -- Legacy Stuff in PNM -------------------------------------------------------
+
+// for whatever reason, PNM is using `YUI.Env.PNM`
+// so we need to expose it into Y and also client side.
+var PNM_ENV = YUI.namespace('Env.PNM');
+PNM_ENV.CACHE  = config.cache.server;
+PNM_ENV.FLICKR = config.flickr;
+
+// getting YUI ready for dispatcher
+Y.use('parallel', 'pnm-place', 'pnm-photo', 'pnm-photos');
+
+var obj = {
+
+    index: function (options, locals, api, callback) {
+
+        callback(null, {
+            helpers: locals.helpers,
+            view: 'index',
+            located: false
+        });
+
+    },
+
+    places: function (options, locals, api, callback) {
+
+        var place    = new Y.PNM.Place({id: locals.params.id}),
+            photos   = new Y.PNM.Photos(),
+            requests = new Y.Parallel();
+
+        place.load(requests.add());
+        photos.load({place: place}, requests.add());
+
+        requests.done(function (results) {
+            var err;
+
+            results.some(function (result) {
+                if (result[0]) { return (err = result[0]); }
+            });
+
+            if (err) {
+                api.notFound();
+                return;
+            }
+
+            var photosData = photos.toJSON(),
+                placeData  = place.toJSON();
+
+            api.expose(placeData, 'mojito.data.place');
+            api.expose(photosData, 'mojito.data.photos');
+
+            callback(null, {
+                helpers: locals.helpers,
+                routes: locals.routes,
+
+                view: 'grid',
+                located: true,
+                place: {
+                    id  : place.get('id'),
+                    text: place.toString()
+                },
+                photos: photosData
+            });
+        });
+
+    },
+
+    photos: function (options, locals, api, callback) {
+
+        var photo = new Y.PNM.Photo({id: locals.params.id}),
+            place;
+
+        photo.load(function (err) {
+
+            if (err) {
+                api.notFound();
+                return;
+            }
+
+            place = photo.get('location');
+
+            var photoData = photo.toJSON(),
+                placeData = place.toJSON();
+
+            // hack to remove location from photo obj
+            photoData.location = undefined;
+
+            api.expose(placeData, 'mojito.data.place');
+            api.expose(photoData, 'mojito.data.photo');
+
+            callback(null, {
+                helpers: locals.helpers,
+                routes: locals.routes,
+
+                view: 'lightbox',
+                located: true,
+                place: {
+                    id  : place.get('id'),
+                    text: place.toString()
+                },
+                photo: {
+                    title:    photo.get('title') || 'Photo',
+                    largeURL: photo.get('largeURL'),
+                    pageURL:  photo.get('pageURL')
+                }
+            });
+
+        });
+
+    },
+
+    lookup: function (options, locals, api, callback) {
+
+        var place     = new Y.PNM.Place(),
+            placeText = locals.url.split('/')[1];
+
+        place.load({text: placeText}, function () {
+            if (place.isNew()) {
+                return api.notFound();
+            }
+
+            api.redirect(locals.helpers.pathTo('places', {id: place.get('id')}), 302);
+        });
+
+    }
+
+};
+
+module.exports = function () {
+    return {
+
+        dispatch: function (name, options, locals, api, callback) {
+
+            if (name && obj[name]) {
+
+                // hack to expose `YUI.Env.PNM` into client
+                api.expose({
+                    CACHE: config.cache.server,
+                    FLICKR: config.flickr
+                }, 'YUI.Env.PNM');
+
+                obj[name](options, locals, api, callback);
+
+            } else {
+                callback(new Error('Unknown action: ' + name));
+            }
+
+            return this;
+        },
+
+        Y: Y
+
+    };
+
+}();
+return;
+
+
+
+
+
+
+
+
+
+
+
+
         engine = hbs = require('express3-handlebars').create({
             handlebars   : config.handlebars,
             helpers      : config.helpers,
@@ -29,68 +191,7 @@ module.exports = {
         });
         templatePattern = config.dirs.templates + '{view}.handlebars';
         return this;
-    },
-    dispatch: function (name, options, locals, api, callback) {
-        if (name === 'index') {
 
-            callback(null, {
-                helpers: locals.helpers,
-                view: 'index',
-                located: false
-            });
-
-        } else if (name === 'places') {
-
-            callback(null, {
-                helpers: locals.helpers,
-                view: 'grid',
-                located: true,
-                place: {
-                    id  : locals.data.place.get('id'),
-                    text: locals.data.place.toString()
-                },
-                photos: locals.data.photos.toJSON(),
-                routes: locals.routes
-            });
-
-        } else if (name === 'photos') {
-
-            callback(null, {
-                helpers: locals.helpers,
-                view: 'grid',
-                located: true,
-                place: {
-                    id  : locals.data.place.get('id'),
-                    text: locals.data.place.toString()
-                },
-                photo: {
-                    title: locals.data.photo.get('title') || 'Photo',
-                    largeURL: locals.data.photo.get('largeURL'),
-                    pageURL: locals.data.photo.get('pageURL')
-                },
-                routes: locals.routes
-            });
-
-        } else if (name === 'lookup') {
-
-            var place     = req.Y.use('pnm-place').PNM.Place(),
-                placeText = locals.url.split('/')[1];
-
-            place.load({text: placeText}, function () {
-                if (place.isNew()) {
-                    return api.notFound();
-                }
-
-                res.redirect(locals.helpers.pathTo('places', {id: place.get('id')}), 302);
-            });
-
-        } else {
-            callback(new Error('Unknown action: ' + name));
-        }
-        return this;
-    }
-};
-return;
 
 app.locals({
     min        : config.env === 'production' ? '-min' : '',
