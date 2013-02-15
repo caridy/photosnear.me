@@ -1,6 +1,7 @@
 var engine,
     templatePattern,
 
+    handlebars = require('express3-handlebars'),
     config     = require('./conf/config'),
     locator    = require('./locator.js'),
     YUI        = require('yui').YUI;
@@ -9,7 +10,6 @@ var Y = YUI({
     useSync: true,
     modules: locator.getYUIAppGroupModules()
 });
-
 
 // -- Legacy Stuff in PNM -------------------------------------------------------
 
@@ -20,22 +20,25 @@ PNM_ENV.CACHE  = config.cache.server;
 PNM_ENV.FLICKR = config.flickr;
 
 // getting YUI ready for dispatcher
-Y.use('dispatcher', 'pnm-logic');
+Y.use('handlebars', 'dispatcher-server', 'pnm-grid-controller', 'pnm-lightbox-controller');
 
-var SuperDispatcher = Y.Base.create('app', Y.Base, [Y.Dispatcher, Y.PNM.Logic], {}, {});
+var hbs = handlebars.create({
+    defaultLayout: config.layouts.main,
+    handlebars:    Y.Handlebars,
+    partialsDir:   config.dirs.templates
+});
+
+var Dispatcher = Y.Base.create('app', Y.BaseCore, [Y.Dispatcher, Y.PNM.GridController, Y.PNM.LightboxController], {}, {});
 
 module.exports = function () {
 
     return {
 
         dispatch: function (name, options, mojito, api) {
-
-            var my = new SuperDispatcher({
+            var my = new Dispatcher({
                     api: api,
                     mojito: mojito
                 });
-
-            my.server();
 
             // hack to expose `YUI.Env.PNM` into client
             api.expose({
@@ -44,9 +47,13 @@ module.exports = function () {
             }, 'YUI.Env.PNM');
 
             my.dispatch(name, options);
+        },
 
-            return this;
-        }
+        engine: hbs.engine,
+
+        // hacks
+        Y: Y,
+        hbs: hbs
 
     };
 

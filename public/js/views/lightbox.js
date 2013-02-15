@@ -95,6 +95,7 @@ LightboxView = Y.Base.create('lightboxView', Y.View, [], {
     },
 
     next: function () {
+        console.log('nexttttttt');
         var photo = this.get('photos').getNext(this.get('photo'));
         if (photo) {
             this.fire('next', {photo: photo});

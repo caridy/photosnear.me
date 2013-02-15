@@ -4,7 +4,6 @@
 
 var express    = require('express'),
     mojito     = require('mojito-server'),
-    handlebars = require('express3-handlebars'),
 
     locator    = require('./locator.js'),
     dispatcher = require('./dispatcher.js'),
@@ -22,11 +21,7 @@ mojito.yui({
 
 // -- App Level configurations -------------------------------------------------
 
-app.engine('handlebars', handlebars({
-    defaultLayout: config.layouts.main,
-    handlebars: require('yui').YUI({useSync: true}).use('handlebars').Handlebars,
-    partialsDir  : config.dirs.templates
-}));
+app.engine('handlebars', dispatcher.engine);
 app.set('view engine', 'handlebars');
 app.set('views', config.dirs.views);
 app.set('name',  config.name);
@@ -81,3 +76,39 @@ app.get('/photos/:id/', mojito.dispatch('photo', {
 // -- Exports ------------------------------------------------------------------
 
 module.exports = app;
+
+
+
+
+
+
+
+
+
+
+
+// TODO: locator should be able to produce this on build time
+/*
+app.get('/templates.js', function (req, res, next) {
+    dispatcher.hbs.loadPartials({
+        precompiled: true
+    }, function (err, partials) {
+        if (err) { return next(err); }
+
+        var templates = [];
+
+        Object.keys(partials).forEach(function (name) {
+            templates.push({
+                name    : name,
+                template: partials[name]
+            });
+        });
+
+        res.set('Content-Type', 'application/javascript');
+
+        res.render('templates', {
+            layout   : false,
+            templates: templates
+        });
+    });
+});*/

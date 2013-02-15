@@ -7,7 +7,7 @@ var PNM       = Y.PNM,
     Templates = PNM.Templates,
     PhotosNearMe;
 
-PhotosNearMe = Y.Base.create('photosNearMe', Y.App, [Y.Dispatcher, Y.PNM.Logic], {
+PhotosNearMe = Y.Base.create('photosNearMe', Y.App, [Y.Dispatcher, Y.PNM.GridController, Y.PNM.LightboxController], {
 
     titleTemplate : Templates['title'],
     headerTemplate: Templates['header'],
@@ -131,13 +131,16 @@ Y.namespace('PNM').App = PhotosNearMe;
         'app-content',
         'app-transitions',
         'gallery-geo',
-        'dispatcher',
-        'pnm-logic',
-        'pnm-grid-view',
-        'pnm-lightbox-view',
+        'dispatcher-client',
         "pnm-no-location-view",
         'pnm-photos',
         'pnm-place',
-        'pnm-templates'
+        'pnm-templates',
+
+        'pnm-grid-controller',
+        'pnm-grid-view',
+
+        'pnm-lightbox-controller',
+        'pnm-lightbox-view'
     ]
 });

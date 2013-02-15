@@ -1,6 +1,6 @@
 var shared = __dirname + "/shared/js/",
     client = __dirname + "/public/js/";
-console.log(shared + "dispatcher.js");
+
 module.exports = {
 
     getYUIAppGroupModules: function () {
@@ -77,12 +77,24 @@ module.exports = {
                     "pnm-templates"
                 ]
             },
-            "pnm-logic": {
-                "fullpath": shared + "logic.js",
-                "requires": ['base-build', 'pnm-place', 'pnm-photo', 'pnm-photos']
+            "pnm-grid-controller": {
+                "fullpath": shared + "grid-controller.js",
+                "requires": ['base-build', 'pnm-place', 'pnm-photos']
+            },
+            "pnm-lightbox-controller": {
+                "fullpath": shared + "lightbox-controller.js",
+                "requires": ['base-build', 'pnm-place', 'pnm-photo']
             },
             "dispatcher": {
                 "fullpath": shared + "dispatcher.js",
+                "requires": ['base-build', 'parallel']
+            },
+            "dispatcher-server": {
+                "fullpath": __dirname + "/dispatcher-server.js",
+                "requires": ['base-build', 'parallel']
+            },
+            "dispatcher-client": {
+                "fullpath": client + "dispatcher-client.js",
                 "requires": ['base-build', 'parallel']
             },
             "ios-oc-fix": {

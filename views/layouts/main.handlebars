@@ -47,13 +47,15 @@
 
             // Re-hydrate models.
             place  = new Y.PNM.Place(data.place || {}),
-            photos = new Y.PNM.Photos({items: data.photos || []}),
+            photos = new Y.PNM.Photos({items: Y.Object.values(data.photos || {})}),
             photo  = new Y.PNM.Photo(data.photo || {}),
 
             // Create app.
             app = new Y.PNM.App({
+
                 place : place,
                 photos: photos,
+                photo : photo,
 
                 container    : '#wrap',
                 viewContainer: '#main',
@@ -62,9 +64,8 @@
                 serverRouting: true,
 
                 mojito: mojito
-            });
 
-        app.client(); // mojito init
+            });
 
         // Register template helpers.
         Y.Object.each(mojito.helpers, function (helper, name) {
