@@ -7,16 +7,10 @@ var PNM       = Y.PNM,
     Templates = PNM.Templates,
     PhotosNearMe;
 
-PhotosNearMe = Y.Base.create('photosNearMe', Y.App, [], {
+PhotosNearMe = Y.Base.create('photosNearMe', Y.App, [Y.Dispatcher, Y.PNM.Logic], {
 
     titleTemplate : Templates['title'],
     headerTemplate: Templates['header'],
-
-    namedRoutes: [
-        {name: 'index',  callbacks: 'locate'},
-        {name: 'places', callbacks: ['handlePlace', 'showGrid']},
-        {name: 'photos', callbacks: ['handlePhoto', 'showLightbox']}
-    ],
 
     views: {
         grid: {
@@ -44,7 +38,6 @@ PhotosNearMe = Y.Base.create('photosNearMe', Y.App, [], {
 
     initializer: function () {
         this.after('placeChange', this.render);
-        this.after('placeChange', this.loadPhotos);
 
         this.on('gridView:more', this.loadMorePhotos);
 
@@ -89,72 +82,8 @@ PhotosNearMe = Y.Base.create('photosNearMe', Y.App, [], {
             var place = new Place(res.coords);
             place.load(function () {
                 self.set('place', place);
-                self.navigateToRoute('places', place, {replace: true});
+                self.navigateToRoute('place', place, {replace: true});
             });
-        });
-    },
-
-    handlePlace: function (req, res, next) {
-        var self    = this,
-            place   = self.get('place'),
-            placeId = req.params.id;
-
-        if (place.get('id') !== placeId) {
-            place = new Place({id: placeId});
-            place.load(function () {
-                self.set('place', place);
-            });
-        }
-
-        req.place  = place;
-        req.photos = self.get('photos');
-
-        next();
-    },
-
-    handlePhoto: function (req, res, next) {
-        var params = req.params,
-            photos = this.get('photos'),
-            photo  = photos.getById(params.id),
-            self   = this;
-
-        if (photo) {
-            req.photo = photos.revive(photo);
-            next();
-            return;
-        }
-
-        photo = new Photo(params);
-        photo.load(function () {
-            var photoPlace = photo.get('location');
-
-            // Use the photo's location if the app does not have a loaded place,
-            // or the photo doesn't have a location.
-            if (self.get('place').isNew() || photoPlace.isNew()) {
-                self.set('place', photoPlace);
-            }
-
-            // Prefer Photo instance already in Photos list.
-            req.photo = photos.getById(params.id) || photo;
-
-            next();
-        });
-    },
-
-    showGrid: function (req) {
-        this.showView('grid', {
-            photos: req.photos
-        }, function (grid) {
-            grid.resetUI();
-        });
-    },
-
-    showLightbox: function (req) {
-        this.showView('lightbox', {
-            photo : req.photo,
-            photos: this.get('photos')
-        }, {
-            update: true
         });
     },
 
@@ -185,15 +114,12 @@ PhotosNearMe = Y.Base.create('photosNearMe', Y.App, [], {
     },
 
     navigateToPhoto: function (e) {
-        this.navigateToRoute('photos', e.photo);
+        this.navigateToRoute('photo', e.photo);
     }
 
 }, {
 
-    ATTRS: {
-        place : {valueFn: function () { return new Place(); }},
-        photos: {valueFn: function () { return new Photos(); }}
-    }
+    ATTRS: {}
 
 });
 
@@ -205,6 +131,8 @@ Y.namespace('PNM').App = PhotosNearMe;
         'app-content',
         'app-transitions',
         'gallery-geo',
+        'dispatcher',
+        'pnm-logic',
         'pnm-grid-view',
         'pnm-lightbox-view',
         "pnm-no-location-view",

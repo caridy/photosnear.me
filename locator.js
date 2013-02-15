@@ -1,6 +1,6 @@
 var shared = __dirname + "/shared/js/",
     client = __dirname + "/public/js/";
-
+console.log(shared + "dispatcher.js");
 module.exports = {
 
     getYUIAppGroupModules: function () {
@@ -76,6 +76,14 @@ module.exports = {
                     "pnm-place",
                     "pnm-templates"
                 ]
+            },
+            "pnm-logic": {
+                "fullpath": shared + "logic.js",
+                "requires": ['base-build', 'pnm-place', 'pnm-photo', 'pnm-photos']
+            },
+            "dispatcher": {
+                "fullpath": shared + "dispatcher.js",
+                "requires": ['base-build', 'parallel']
             },
             "ios-oc-fix": {
                 "fullpath": __dirname + "/public/vendor/ios-orientationchange-fix.js"

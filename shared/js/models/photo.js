@@ -111,6 +111,13 @@ Photo = Y.Base.create('photo', Y.Model, [Y.ModelSync.YQL], {
             img.onload  = Y.bind(callback, context, img);
             img.onerror = Y.bind(callback, context, null);
         }
+    },
+
+    toJSON: function () {
+        var obj = Photo.superclass.toJSON.apply(this, arguments);
+        // hacking to remove location from the json version of the model
+        delete obj.location;
+        return obj;
     }
 
 }, {

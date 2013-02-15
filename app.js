@@ -24,6 +24,7 @@ mojito.yui({
 
 app.engine('handlebars', handlebars({
     defaultLayout: config.layouts.main,
+    handlebars: require('yui').YUI({useSync: true}).use('handlebars').Handlebars,
     partialsDir  : config.dirs.templates
 }));
 app.set('view engine', 'handlebars');
@@ -70,8 +71,12 @@ mojito.dispatcher('pnm', dispatcher);
 // -- Routes -------------------------------------------------------------------
 
 app.get('/',            mojito.dispatch('index'));
-app.get('/places/:id/', mojito.dispatch('places'));
-app.get('/photos/:id/', mojito.dispatch('photos'));
+app.get('/places/:id/', mojito.dispatch('place', {
+    located: true
+}));
+app.get('/photos/:id/', mojito.dispatch('photo', {
+    located: true
+}));
 
 // -- Exports ------------------------------------------------------------------
 
