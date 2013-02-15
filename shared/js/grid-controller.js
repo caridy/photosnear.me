@@ -20,47 +20,55 @@ YUI.add('pnm-grid-controller', function (Y, NAME) {
 
         // coordinators
 
-        place: function (queue, options) {
+        place: function (options, callback) {
             var my       = this,
                 placeId  = options.params.id,
                 place    = this.get('place'),
                 photos   = this.get('photos'),
-                api      = this.api;
+                api      = this.api,
+                queue    = new Y.Parallel();
 
+            // updating the place model if needed
             if (!place || place.get('id') !== placeId) {
                 place  = new Y.PNM.Place({id: placeId});
-                photos = new Y.PNM.Photos();
                 place.load(queue.add(function (err) {
 
                     if (err) {
-                        api.notFound(err);
+                        callback(err);
                         return;
                     }
-                    // setting
-                    my.set('place', place);
-
-                    // exposing
-                    api.exposeData(place, 'place');
-
-                }));
-                photos.load({place: place}, queue.add(function (err) {
-
-                    if (err) {
-                        api.notFound(err);
-                        return;
-                    }
-
-                    // setting
-                    my.set('photos', photos);
-
-                    // exposing
-                    api.exposeData(photos, 'photos');
 
                 }));
             }
 
-            // selecting a view
-            api.exposeView('grid');
+            // updating the photos model if needed
+            if (!photos || photos.get('place') !== place) {
+                photos = new Y.PNM.Photos();
+                photos.load({place: place}, queue.add(function (err) {
+
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+
+                }));
+            }
+
+            queue.done(function () {
+                // setting
+                my.set('place',  place);
+                my.set('photos', photos);
+
+                // exposing
+                api.exposeData(photos, 'photos');
+                api.exposeData(place,  'place');
+
+                // selecting a view
+                api.exposeView('grid');
+
+                callback();
+            });
+
         },
 
         // mediators
@@ -69,11 +77,7 @@ YUI.add('pnm-grid-controller', function (Y, NAME) {
             var my = this;
 
             helpers.place = function () {
-                var place = my.get('place');
-                return {
-                    id  : place.get('id'),
-                    text: place.toString()
-                };
+                return my.get('place').toJSON();
             };
 
             helpers.photos = function () {
@@ -94,4 +98,4 @@ YUI.add('pnm-grid-controller', function (Y, NAME) {
 
     });
 
-}, '', {requires: ['base-build', 'pnm-place', 'pnm-photos']});
+}, '', {requires: ['base-build', 'parallel', 'pnm-place', 'pnm-photos']});

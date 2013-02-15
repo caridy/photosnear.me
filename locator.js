@@ -79,7 +79,7 @@ module.exports = {
             },
             "pnm-grid-controller": {
                 "fullpath": shared + "grid-controller.js",
-                "requires": ['base-build', 'pnm-place', 'pnm-photos']
+                "requires": ['base-build', 'parallel', 'pnm-place', 'pnm-photos']
             },
             "pnm-lightbox-controller": {
                 "fullpath": shared + "lightbox-controller.js",
@@ -87,15 +87,15 @@ module.exports = {
             },
             "dispatcher": {
                 "fullpath": shared + "dispatcher.js",
-                "requires": ['base-build', 'parallel']
+                "requires": ['base-build']
             },
             "dispatcher-server": {
                 "fullpath": __dirname + "/dispatcher-server.js",
-                "requires": ['base-build', 'parallel']
+                "requires": ['dispatcher']
             },
             "dispatcher-client": {
                 "fullpath": client + "dispatcher-client.js",
-                "requires": ['base-build', 'parallel']
+                "requires": ['dispatcher']
             },
             "ios-oc-fix": {
                 "fullpath": __dirname + "/public/vendor/ios-orientationchange-fix.js"

@@ -22,11 +22,16 @@ YUI.add('dispatcher', function (Y, NAME) {
 
             my.coordinate(name, options, function (e1) {
 
+                // todo: error handling
+
                 // supporting default view
                 mojito.view = mojito.view || {};
                 mojito.view.name = mojito.view.name || options.view;
 
                 my.mediate(mojito.view.name, options, function (e2, data, helpers) {
+
+                    // todo: error handling
+
                     // there is not need to expose view specific helpers because
                     // they should be part of the mediator on the client side
                     mojito.view.helpers = helpers;
@@ -40,14 +45,12 @@ YUI.add('dispatcher', function (Y, NAME) {
 
         coordinate: function (actionName, options, callback) {
 
-            var queue = new Y.Parallel();
-
             if (this[actionName]) {
                 Y.log('Coordinating for action: ' + actionName, 'debug', NAME);
-                this[actionName](queue, options);
+                this[actionName](options, callback);
+            } else {
+                callback();
             }
-
-            queue.done(callback);
 
         },
 
@@ -73,4 +76,4 @@ YUI.add('dispatcher', function (Y, NAME) {
 
     });
 
-}, '', {requires: ['base-build', 'parallel']});
+}, '', {requires: ['base-build']});

@@ -20,7 +20,7 @@ YUI.add('pnm-lightbox-controller', function (Y, NAME) {
 
         // coordinators
 
-        photo: function (queue, options) {
+        photo: function (options, callback) {
 
             var my       = this,
                 photoId  = options.params.id,
@@ -39,26 +39,29 @@ YUI.add('pnm-lightbox-controller', function (Y, NAME) {
                 // exposing
                 api.exposeData(place,  'place');
                 api.exposeData(photo,  'photo');
+
+                // selecting a view
+                api.exposeView('lightbox');
+
+                callback();
             }
 
             if (!photo) {
                 // loading the photo from yql
                 photo = new Y.PNM.Photo({id: photoId});
-                photo.load(queue.add(function (err) {
+                photo.load(function (err) {
                     if (err) {
-                        api.notFound(err);
+                        callback(err);
                         return;
                     }
                     done();
-                }));
+                });
             } else {
                 // getting the photo object from photos list
                 photo = photos.revive(photo);
                 done();
             }
 
-            // selecting a view
-            api.exposeView('lightbox');
         },
 
         // mediators
@@ -67,20 +70,13 @@ YUI.add('pnm-lightbox-controller', function (Y, NAME) {
             var my = this;
 
             helpers.place = function () {
-                var place = my.get('place');
-                return {
-                    id  : place.get('id'),
-                    text: place.toString()
-                };
+                return my.get('photos').toJSON();
             };
 
             helpers.photo = function () {
-                var photo = my.get('photo');
-                return {
-                    title:    photo.get('title') || 'Photo',
-                    largeURL: photo.get('largeURL'),
-                    pageURL:  photo.get('pageURL')
-                };
+                var photo = my.get('photo').toJSON();
+                photo.title = photo.title || 'Photo';
+                return photo;
             };
 
             return {};

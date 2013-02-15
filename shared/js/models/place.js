@@ -79,6 +79,15 @@ Place = Y.Base.create('place', Y.Model, [Y.ModelSync.YQL], {
         }
 
         return country || '';
+    },
+
+    toJSON: function () {
+        var obj = Place.superclass.toJSON.apply(this, arguments);
+        // hacking to add id since the inherited toJSON will
+        // automatically skip it.
+        obj.id   = this.get('id');
+        obj.text = this.toString();
+        return obj;
     }
 
 }, {

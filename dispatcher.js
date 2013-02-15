@@ -1,7 +1,6 @@
-var engine,
-    templatePattern,
+/*jslint node: true*/
 
-    handlebars = require('express3-handlebars'),
+var handlebars = require('express3-handlebars'),
     config     = require('./conf/config'),
     locator    = require('./locator.js'),
     YUI        = require('yui').YUI;
@@ -30,7 +29,7 @@ var hbs = handlebars.create({
 
 var Dispatcher = Y.Base.create('app', Y.BaseCore, [Y.Dispatcher, Y.PNM.GridController, Y.PNM.LightboxController], {}, {});
 
-module.exports = function () {
+module.exports = (function () {
 
     return {
 
@@ -57,4 +56,4 @@ module.exports = function () {
 
     };
 
-}();
+}());
