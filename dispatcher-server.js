@@ -13,6 +13,10 @@ YUI.add('dispatcher-server', function (Y, NAME) {
             api.expose(data, 'mojito.data.' + name);
         };
 
+        api.exposedData = function (name) {
+            return mojito.data && mojito.data[name];
+        };
+
         api.exposeView = function (v) {
             mojito.view = {
                 name: v

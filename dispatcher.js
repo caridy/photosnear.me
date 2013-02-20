@@ -7,7 +7,7 @@ var handlebars = require('express3-handlebars'),
 
 var Y = YUI({
     useSync: true,
-    modules: locator.getYUIAppGroupModules()
+    modules: locator.getYUIModulesForServer()
 });
 
 // -- Legacy Stuff in PNM -------------------------------------------------------
@@ -30,6 +30,8 @@ var hbs = handlebars.create({
 var Dispatcher = Y.Base.create('app', Y.BaseCore, [Y.Dispatcher, Y.PNM.GridController, Y.PNM.LightboxController], {}, {});
 
 module.exports = (function () {
+
+    'use strict';
 
     return {
 

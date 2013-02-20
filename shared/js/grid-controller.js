@@ -84,6 +84,10 @@ YUI.add('pnm-grid-controller', function (Y, NAME) {
                 return my.get('photos').toJSON();
             };
 
+            helpers.tagline = function () {
+                return my.get('place').toString() + " - the awesome tagline";
+            };
+
             return {};
         }
 

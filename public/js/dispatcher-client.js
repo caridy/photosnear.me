@@ -33,6 +33,10 @@ YUI.add('dispatcher-client', function (Y, NAME) {
             mojito.data[name] = data;
         };
 
+        api.exposedData = function (name) {
+            return mojito.data && mojito.data[name];
+        };
+
         api.exposeView = function (v) {
             mojito.view = {
                 name: v

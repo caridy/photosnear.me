@@ -15,7 +15,7 @@
         "combohandler"       : "latest",
         "express"            : "3.1.x",
         "express-expose"     : "0.3.x",
-        "express3-handlebars": "latest",
+        "express3-handlebars": "0.3.x",
         "yui"                : "3.8.x"
     }
 }

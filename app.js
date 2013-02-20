@@ -7,8 +7,9 @@ var express    = require('express'),
 
     locator    = require('./locator.js'),
     dispatcher = require('./dispatcher.js'),
-    config     = require('./conf/config'),
-    middleware = require('./lib/middleware'),
+    config     = require('./conf/config'),    /* locator.getConfig()? */
+
+    middleware = require('./lib/middleware'), /* example of a custom middleware */
 
     app = mojito();
 
@@ -21,6 +22,7 @@ mojito.yui({
 
 // -- App Level configurations -------------------------------------------------
 
+app.enable('strict routing');
 app.engine('handlebars', dispatcher.engine);
 app.set('view engine', 'handlebars');
 app.set('views', config.dirs.views);
@@ -28,12 +30,10 @@ app.set('name',  config.name);
 app.set('env',   config.env);
 app.set('port',  config.port);
 
-app.enable('strict routing');
-
 // -- Middleware ---------------------------------------------------------------
 
 app.use(express.favicon());
-app.use(app.router);
+app.use(app.router); /* pnm requires some specific order due to /<city-name> use-case */
 app.use(express['static'](config.dirs.pub));
 app.configure('development', function () {
     app.use(mojito.yui.serveCoreFromLocal({
